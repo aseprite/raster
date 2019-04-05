@@ -2,10 +2,21 @@ language: cpp
 
 matrix:
   include:
+    - os: windows
+      chocolatey:
+        packages:
+          - cmake
+          - ninja
+      env:
+        - MATRIX_EVAL="CC=cl.exe && CXX=cl.exe"
+        - MAKE_COMMAND=nmake
+        - CMAKE_BUILD_SYSTEM="NMake Makefiles"
     - os: osx
       osx_image: xcode9
       env:
         - MATRIX_EVAL="wget https://github.com/ninja-build/ninja/releases/download/v1.8.2/ninja-mac.zip && unzip ninja-mac.zip && export PATH=$PWD:$PATH"
+        - MAKE_COMMAND=ninja
+        - CMAKE_BUILD_SYSTEM=Ninja
     - os: linux
       addons:
         apt:
@@ -16,15 +27,18 @@ matrix:
             - ninja-build
       env:
         - MATRIX_EVAL="CC=gcc-7 && CXX=g++-7"
+        - MAKE_COMMAND=ninja
+        - CMAKE_BUILD_SYSTEM=Ninja
 
 before_install:
   - eval "${MATRIX_EVAL}"
+  - if [[ "$TRAVIS_OS_NAME" == "windows" ]] ; then choco install visualstudio2017-workload-vctools -y ; fi
 
 before_script:
   - mkdir build
   - cd build
-  - cmake .. -G Ninja -DCMAKE_BUILD_TYPE=Debug
+  - cmake .. -G "${CMAKE_BUILD_SYSTEM}" -DCMAKE_BUILD_TYPE=Debug
 
 script:
-  - ninja
+  - ${MAKE_COMMAND}
   - ctest --output-on-failure
